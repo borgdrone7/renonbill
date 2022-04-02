@@ -1,0 +1,44 @@
+version: "3.8"
+
+networks:
+  renon_net:
+
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: db/password.txt
+
+services:
+  db:
+    image: postgres:13.2
+    container_name: renonbill_db_1
+    tty: true
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db:/db
+    secrets:
+      - db-password
+    ports:
+      - "54321:5432"
+    environment:
+      - POSTGRES_DATABASE=renonbill
+      - POSTGRES_USER=renonbill
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    networks:
+      - renon_net
+
+  backend:
+    image: ikimio/renon_backend:0.9
+    container_name: renonbill_backend_1
+    command: bash -c "/code/entrypoint.sh"
+    tty: true
+    secrets:
+      - db-password
+    volumes:
+      - ./settings:/code/backend/backend
+    ports:
+      - "8000:8000"
+    networks:
+      - renon_net
